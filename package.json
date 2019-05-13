@@ -1,0 +1,15 @@
+{
+  "name": "q",
+  "version": "1.5.1",
+  "description": "A fake implementaion of Q",
+  "keywords": [
+  ],
+  "main": "index.js",
+  "author": "Mathew Heard",
+  "license": "ISC",
+  "dependencies": {
+  },
+  "devDependencies": {
+  },
+  "repository": "splitice/q-lite"
+}
