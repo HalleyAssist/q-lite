@@ -31,7 +31,7 @@ function Q(value){
 	}
 }
 
-Q.deferred = function(){
+Q.defer = function(){
 	const d = {}
 	d.promise = Q(new QPromise((resolve, reject)=>{
 		d.resolve = resolve
@@ -73,5 +73,7 @@ Q.nfcall = function(fn,...args){
 		}
 	})
 }
+
+Q.resetUnhandledRejections = function(){}
 
 module.exports = Q
