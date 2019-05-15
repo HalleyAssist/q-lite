@@ -4,7 +4,7 @@ class QPromise extends Promise {
 	}
 
 	timeout(ms, message){
-		const deferred = Q.deferred()
+		const deferred = Q.defer()
 		setTimeout(function(){
 			const e = new Error(message ? message : ("Timed out after " + ms + " ms"))
 			e.code = 'ETIMEDOUT'
@@ -17,8 +17,8 @@ class QPromise extends Promise {
 	}
 
 	delay(ms){
-		return this.then(function(){
-			return Q.delay(ms)
+		return this.then(function(value){
+			return Q.delay(ms).then(()=>value)
 		})
 	}
 
@@ -26,23 +26,35 @@ class QPromise extends Promise {
 		return this.catch(fn)
 	}
 
-	finally(fn){
-		return this.then(async r => {
-			await fn()
-			return r
-		}, async (ex) => {
-			await fn()
-			throw ex
-		})
+	done(onSuccess = undefined, onReject = undefined){
+		if(!onSuccess) return
+		this.then(onSuccess, onReject)
+	}
+
+	nodeify(fn){
+		if(typeof fn !== 'function') return this
+
+		this.done(r=>fn(null, r), e=>fn(e))
+	}
+
+	_promiseState(){
+		return process.binding('util').getPromiseDetails(this)[0]
+	}
+	isPending(){
+		return this._promiseState() == 0
+	}
+
+	isFulfilled(){
+		return this._promiseState() == 1
+	}
+
+	isRejected(){
+		return this._promiseState() == 2
 	}
 }
 
 function Q(value){
-	if(value && value.then){
-		return QPromise.resolve().then(()=>value)
-	}else{
-		return QPromise.resolve(value)
-	}
+	return new QPromise(r=>r(value))
 }
 
 Q.defer = function(){
@@ -55,7 +67,7 @@ Q.defer = function(){
 }
 
 Q.delay = function(ms){
-	const deferred = Q.deferred()
+	const deferred = Q.defer()
 	setTimeout(function(){
 		deferred.resolve()
 	}, ms)
@@ -88,10 +100,18 @@ Q.nfcall = function(fn,...args){
 	})
 }
 
+Q.ninvoke = function(object, method, ...args){
+	return Q.nfcall(object[method].bind(object), ...args)
+}
+
 Q.resetUnhandledRejections = function(){}
 
 Q.all = function(values){
 	return QPromise.all(values)
 }
+
+Q.reject = (reason)=>QPromise.reject(reason)
+Q.resolve = value=>QPromise.resolve(value)
+
 
 module.exports = Q
