@@ -21,6 +21,20 @@ class QPromise extends Promise {
 			return Q.delay(ms)
 		})
 	}
+
+	fail(fn){
+		return this.catch(fn)
+	}
+
+	finally(fn){
+		return this.then(async r => {
+			await fn()
+			return r
+		}, async (ex) => {
+			await fn()
+			throw ex
+		})
+	}
 }
 
 function Q(value){
@@ -75,5 +89,9 @@ Q.nfcall = function(fn,...args){
 }
 
 Q.resetUnhandledRejections = function(){}
+
+Q.all = function(values){
+	return QPromise.all(values)
+}
 
 module.exports = Q
