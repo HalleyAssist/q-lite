@@ -36,20 +36,14 @@ class QPromise extends Promise {
 
 		this.done(r=>fn(null, r), e=>fn(e))
 	}
-
-	_promiseState(){
-		return process.binding('util').getPromiseDetails(this)[0]
-	}
 	isPending(){
-		return this._promiseState() == 0
+		return Q.isPending(this)
 	}
-
 	isFulfilled(){
-		return this._promiseState() == 1
+		return Q.isFulfilled(this)
 	}
-
 	isRejected(){
-		return this._promiseState() == 2
+		return Q.isRejected(this)
 	}
 }
 
@@ -113,5 +107,19 @@ Q.all = function(values){
 Q.reject = (reason)=>QPromise.reject(reason)
 Q.resolve = value=>QPromise.resolve(value)
 
+function _promiseState(promise){
+	return process.binding('util').getPromiseDetails(promise)[0]
+}
+Q.isPending = function(promise){
+	return _promiseState(promise) == 0
+}
+
+Q.isFulfilled = function(promise){
+	return _promiseState(promise) == 1
+}
+
+Q.isRejected = function(promise){
+	return _promiseState(promise) == 2
+}
 
 module.exports = Q
