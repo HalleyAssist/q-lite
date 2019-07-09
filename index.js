@@ -5,12 +5,16 @@ class QPromise extends Promise {
 
 	timeout(ms, message){
 		const deferred = Q.defer()
-		setTimeout(function(){
-			const e = new Error(message ? message : ("Timed out after " + ms + " ms"))
-			e.code = 'ETIMEDOUT'
+		
+		const e = new Error(message ? message : ("Timed out after " + ms + " ms"))
+		e.code = 'ETIMEDOUT'
+
+		const timeout = setTimeout(function(){
 			deferred.reject(e)
 		}, ms)
+		
 		this.then(function(r){
+			clearTimeout(timeout)
 			deferred.resolve(r)
 		})
 		return deferred.promise
