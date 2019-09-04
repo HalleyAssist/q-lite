@@ -102,6 +102,10 @@ Q.ninvoke = function(object, method, ...args){
 	return Q.nfcall(object[method].bind(object), ...args)
 }
 
+Q.finvoke = function(object, method, ...args){
+	return Q.fcall(object[method].bind(object), ...args)
+}
+
 Q.resetUnhandledRejections = function(){}
 
 Q.all = function(values){
