@@ -55,6 +55,8 @@ function Q(value){
 	return new QPromise(r=>r(value))
 }
 
+Q.Promise = QPromise
+
 Q.defer = function(){
 	const d = {}
 	d.promise = Q(new QPromise((resolve, reject)=>{
