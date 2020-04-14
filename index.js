@@ -13,7 +13,7 @@ class QPromise extends Promise {
 			deferred.reject(e)
 		}, ms)
 		
-		this.then(function(r){
+		this.catch(()=>{}).then(function(r){
 			clearTimeout(timeout)
 			deferred.resolve(r)
 		})
