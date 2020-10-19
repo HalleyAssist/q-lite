@@ -60,11 +60,12 @@ Q.defer = function defer(){
 	let d
 	d = {
 		resolve: undefined, reject: undefined,
-		promise: new QPromise((resolve, reject)=>{
-			d.resolve = resolve
-			d.reject = reject
-		})
+		promise: undefined
 	}
+	d.promise = new QPromise((resolve, reject)=>{
+		d.resolve = resolve
+		d.reject = reject
+	})
 	return d
 }
 
