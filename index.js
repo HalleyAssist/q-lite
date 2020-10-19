@@ -3,13 +3,12 @@ class QPromise extends Promise {
 			super(executor);
 	}
 
-	timeout(ms, message){
+	timeout(ms, message = undefined){
 		const deferred = Q.defer()
-		
-		const e = new Error(message ? message : ("Timed out after " + ms + " ms"))
-		e.code = 'ETIMEDOUT'
 
 		const timeout = setTimeout(function(){
+			const e = new Error(message ? message : (`Timed out after ${ms} ms`))
+			e.code = 'ETIMEDOUT'
 			deferred.reject(e)
 		}, ms)
 		
@@ -57,12 +56,14 @@ function Q(value){
 
 Q.Promise = QPromise
 
-Q.defer = function(){
-	const d = {}
-	d.promise = Q(new QPromise((resolve, reject)=>{
-		d.resolve = resolve
-		d.reject = reject
-	}))
+Q.defer = function defer(){
+	const d = {
+		resolve: undefined, reject: undefined,
+		promise: new QPromise((resolve, reject)=>{
+			d.resolve = resolve
+			d.reject = reject
+		})
+	}
 	return d
 }
 
