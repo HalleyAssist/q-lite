@@ -71,10 +71,24 @@ Q.defer = function defer(){
 
 Q.delay = function(ms){
 	const deferred = Q.defer()
-	setTimeout(function(){
+	const timer = setTimeout(function(){
 		deferred.resolve()
 	}, ms)
+	deferred.cancel = function(){
+		clearTimeout(timer)
+		deferred.reject('delay cancelled')
+	}
 	return deferred.promise
+}
+
+Q.cancelledRace = async function(promises){
+	try {
+		await Promise.race(promises)
+	} finally{
+		for(const p of promises){
+			if(p.cancel) p.cancel()
+		}
+	}
 }
 
 Q.fcall = function(fn, ...args){
