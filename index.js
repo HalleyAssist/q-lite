@@ -83,13 +83,15 @@ Q.delay = function(ms){
 }
 
 Q.cancelledRace = async function(promises){
+	let ret
 	try {
-		await Promise.race(promises)
+		ret = await Promise.race(promises)
 	} finally{
 		for(const p of promises){
 			if(p.cancel) p.cancel()
 		}
 	}
+	return ret
 }
 
 Q.fcall = function(fn, ...args){
