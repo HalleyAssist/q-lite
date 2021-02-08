@@ -75,11 +75,12 @@ Q.delay = function(ms){
 	const timer = setTimeout(function(){
 		deferred.resolve()
 	}, ms)
-	deferred.cancel = function(){
+	let ret = deferred.promise
+	ret.cancel = function(){
 		clearTimeout(timer)
 		deferred.reject('delay cancelled')
 	}
-	return deferred.promise
+	return ret
 }
 
 Q.cancelledRace = async function(promises){
