@@ -1,6 +1,6 @@
 class QPromise extends Promise {
 	constructor(executor) {
-			super(executor);
+		super(executor);
 	}
 
 	timeout(ms, message = undefined){
@@ -72,9 +72,7 @@ Q.defer = function defer(){
 
 Q.delay = function(ms){
 	const deferred = Q.defer()
-	const timer = setTimeout(function(){
-		deferred.resolve()
-	}, ms)
+	const timer = setTimeout(deferred.resolve, ms)
 	let ret = deferred.promise
 	ret.cancel = function(){
 		clearTimeout(timer)
