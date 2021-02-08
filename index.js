@@ -123,7 +123,11 @@ Q.timeout = function (promise, ms, message = undefined){
 		deferred.reject(err)
 	})
 	
-	return deferred.promise
+	const ret = deferred.promise
+	ret.cancel = function(){
+		deferred.reject('cancelled')
+	}
+	return ret
 }
 
 Q.ninvoke = function(object, method, ...args){
