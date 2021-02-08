@@ -12,9 +12,9 @@ class QPromise extends Promise {
 			deferred.reject(e)
 		}, ms)
 		
-		this.then(function(r){
-			clearTimeout(timeout)
+		Promise.race([deferred.promise, this]).then(r=>{
 			deferred.resolve(r)
+			clearTimeout(timeout)
 		}, deferred.reject)
 		
 		return deferred.promise
