@@ -118,7 +118,10 @@ Q.timeout = function (promise, ms, message = undefined){
 	Promise.race([deferred.promise, promise]).then(r=>{
 		clearTimeout(timeout)
 		deferred.resolve(r)
-	}, deferred.reject)
+	}, err=>{
+		clearTimeout(timeout)
+		deferred.reject(err)
+	})
 	
 	return deferred.promise
 }
