@@ -119,6 +119,23 @@ Q.nfcall = function(fn,...args){
 	})
 }
 
+Q.timeout = function (promise, ms, message = undefined){
+	const deferred = Q.defer()
+
+	const e = new Error(message ? message : `Timed out after ${ms} ms`)
+	const timeout = setTimeout(function(){
+		e.code = 'ETIMEDOUT'
+		deferred.reject(e)
+	}, ms)
+	
+	Promise.race([deferred.promise, promise]).then(r=>{
+		clearTimeout(timeout)
+		deferred.resolve(r)
+	}, deferred.reject)
+	
+	return deferred.promise
+}
+
 Q.ninvoke = function(object, method, ...args){
 	return Q.nfcall(object[method].bind(object), ...args)
 }
