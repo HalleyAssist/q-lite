@@ -199,6 +199,7 @@ Q.timeout = function (promise, ms, message = undefined){
 	
 	const ret = deferred.promise
 	ret.cancel = function(){
+		if(promise.cancel) promise.cancel()
 		deferred.reject('cancelled')
 	}
 	return ret
