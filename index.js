@@ -1,3 +1,5 @@
+const util = require('util')
+
 class QPromise extends Promise {
 	constructor(executor) {
 		super(executor);
@@ -222,9 +224,25 @@ Q.all = function(values){
 Q.reject = (reason)=>QPromise.reject(reason)
 Q.resolve = value=>QPromise.resolve(value)
 
-function _promiseState(promise){
-	return process.binding('util').getPromiseDetails(promise)[0]
+const Util = process.binding('util')
+
+if(Util.getPromiseDetails){
+	function _promiseState(promise){
+		return Util.getPromiseDetails(promise)[0]
+	}
+} else{
+	function _promiseState(promise){
+		const p = util.inspect(promise)
+		if(p.startsWith('Promise { <rejected>')){
+			return 2
+		} else if(p.startsWith('Promise { <pending>')){
+			return 0
+		} else{
+			return 1
+		}
+	}
 }
+
 Q.isPending = function(promise){
 	return _promiseState(promise) == 0
 }
