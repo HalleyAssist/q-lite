@@ -233,9 +233,9 @@ if(Util.getPromiseDetails){
 } else{
 	function _promiseState(promise){
 		const p = util.inspect(promise)
-		if(p.startsWith('Promise { <rejected>')){
+		if(p.includes('{ <rejected>')){
 			return 2
-		} else if(p.startsWith('Promise { <pending>')){
+		} else if(p.includes('{ <pending>')){
 			return 0
 		} else{
 			return 1
