@@ -186,24 +186,20 @@ Q.timeout = function (promise, ms, message = undefined){
 	const deferred = Q.defer()
 
 	const e = new Error(message ? message : `Timed out after ${ms} ms`)
-	const timeout = setTimeout(function(){
+	const timeout = setTimeout(() => {
 		e.code = 'ETIMEDOUT'
 		deferred.reject(e)
 	}, ms)
 	
-	Q.safeRace([deferred.promise, promise]).then(r=>{
+	promise.then(deferred.resolve, deferred.reject).then(()=>{
 		clearTimeout(timeout)
-		deferred.resolve(r)
-	}, err=>{
-		clearTimeout(timeout)
-		deferred.reject(err)
 	})
 	
-	const ret = deferred.promise
-	ret.cancel = function(){
+	deferred.cancel = () =>{
 		if(promise.cancel) promise.cancel()
 		deferred.reject('cancelled')
 	}
+
 	return ret
 }
 
