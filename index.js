@@ -200,7 +200,7 @@ Q.timeout = function (promise, ms, message = undefined){
 		deferred.reject('cancelled')
 	}
 
-	return ret
+	return deferred
 }
 
 Q.ninvoke = function(object, method, ...args){
