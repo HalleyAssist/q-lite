@@ -203,6 +203,21 @@ Q.timeout = function (promise, ms, message = undefined){
 	return deferred.promise
 }
 
+Q.deferredTimeout = function(deferred, ms, symbol = undefined){
+	if(!symbol) {
+		symbol = new Error(`Timed out after ${ms} ms`)
+	}
+	const timer = setTimeout(()=>{
+		deferred.reject(symbol)
+	}, ms)
+
+	deferred.catch(()=>{}).then(()=>{
+		clearTimeout(timer)
+	})
+
+	return deferred.promise
+}
+
 Q.ninvoke = function(object, method, ...args){
 	return Q.nfcall(object[method].bind(object), ...args)
 }
