@@ -237,12 +237,13 @@ Q.resolve = value=>QPromise.resolve(value)
 
 const Util = process.binding('util')
 
+let _promiseState
 if(Util.getPromiseDetails){
-	function _promiseState(promise){
+	_promiseState = function(promise){
 		return Util.getPromiseDetails(promise)[0]
 	}
 } else{
-	function _promiseState(promise){
+	_promiseState = function(promise){
 		const p = util.inspect(promise)
 		if(p.includes('{ <rejected>')){
 			return 2

@@ -1,0 +1,13 @@
+name: Eslint
+on:
+  push:
+
+jobs:
+  check_eslint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install modules
+      run: |
+        sudo npm install -g eslint
+    - run: eslint index.js --ext .js,.jsx,.ts,.tsx
