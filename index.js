@@ -182,13 +182,14 @@ Q.nfcall = function(fn,...args){
 	})
 }
 
-Q.timeout = function (promise, ms, message = undefined){
+Q.timeout = function (promise, ms, message = undefined, overloadSafe = true){
 	const deferred = Q.defer()
 
 	const e = new Error(message ? message : `Timed out after ${ms} ms`)
 	const timeout = setTimeout(() => {
 		e.code = 'ETIMEDOUT'
-		deferred.reject(e)
+		if(overloadSafe) setImmediate(deferred.reject, e)
+		else deferred.reject(e)
 	}, ms)
 	
 	promise.then(deferred.resolve, deferred.reject).then(()=>{
@@ -203,12 +204,13 @@ Q.timeout = function (promise, ms, message = undefined){
 	return deferred.promise
 }
 
-Q.deferredTimeout = function(deferred, ms, symbol = undefined){
+Q.deferredTimeout = function(deferred, ms, symbol = undefined, overloadSafe = true){
 	if(!symbol) {
 		symbol = new Error(`Timed out after ${ms} ms`)
 	}
 	const timer = setTimeout(()=>{
-		deferred.reject(symbol)
+		if(overloadSafe) setImmediate(deferred.reject, symbol)
+		else deferred.reject(symbol)
 	}, ms)
 
 	deferred.catch(()=>{}).then(()=>{
