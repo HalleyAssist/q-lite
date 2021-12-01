@@ -213,7 +213,7 @@ Q.deferredTimeout = function(deferred, ms, symbol = undefined, overloadSafe = tr
 		else deferred.reject(symbol)
 	}, ms)
 
-	deferred.catch(()=>{}).then(()=>{
+	deferred.promise.catch(()=>{}).then(()=>{
 		clearTimeout(timer)
 	})
 
