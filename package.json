@@ -4,12 +4,17 @@
   "description": "A fake implementaion of Q",
   "keywords": [
   ],
+  "scripts": {
+    "test": "mocha"
+  },
   "main": "index.js",
   "author": "Mathew Heard",
   "license": "ISC",
   "dependencies": {
   },
   "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1"
   },
   "repository": "splitice/q-lite"
 }
