@@ -245,11 +245,14 @@ if(Util.getPromiseDetails){
 		return Util.getPromiseDetails(promise)[0]
 	}
 } else{
+	const RejectedPromise = new RegExp("\\{[\\s\n\r]+<rejected>")
+	const PendingPromise = new RegExp("\\{[\\s\n\r]+<pending>")
+
 	_promiseState = function(promise){
 		const p = util.inspect(promise)
-		if(p.includes('{ <rejected>')){
+		if(RejectedPromise.test(p)){
 			return 2
-		} else if(p.includes('{ <pending>')){
+		} else if(PendingPromise.test(p)){
 			return 0
 		} else{
 			return 1
