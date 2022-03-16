@@ -245,7 +245,9 @@ if(Util.getPromiseDetails){
 		return Util.getPromiseDetails(promise)[0]
 	}
 } else{
+	// eslint-disable-next-line no-control-regex
 	const RejectedPromise = new RegExp("\\{[\\s\n\r]+<rejected>")
+	// eslint-disable-next-line no-control-regex
 	const PendingPromise = new RegExp("\\{[\\s\n\r]+<pending>")
 
 	_promiseState = function(promise){
