@@ -196,7 +196,7 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true){
 		clearTimeout(timeout)
 	})
 	
-	deferred.cancel = () =>{
+	deferred.promise.cancel = () =>{
 		if(promise.cancel) promise.cancel()
 		deferred.reject('cancelled')
 	}
