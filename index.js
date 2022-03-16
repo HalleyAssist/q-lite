@@ -157,9 +157,9 @@ Q.cancelledRace = async function(promises, safeRace = true){
 }
 
 Q.fcall = function(fn, ...args){
-	return new QPromise((resolve, reject)=>{
+	return new QPromise(async (resolve, reject)=>{
 		try {
-			resolve(fn(...args))
+			resolve(await fn(...args))
 		} catch(ex){
 			reject(ex)
 		}
@@ -220,12 +220,12 @@ Q.deferredTimeout = function(deferred, ms, symbol = undefined, overloadSafe = tr
 	return deferred.promise
 }
 
-Q.ninvoke = function(object, method, ...args){
-	return Q.nfcall(object[method].bind(object), ...args)
+Q.ninvoke = async function(object, method, ...args){
+	return Q.nfcall(await object[method].bind(object), ...args)
 }
 
-Q.finvoke = function(object, method, ...args){
-	return Q.fcall(object[method].bind(object), ...args)
+Q.finvoke = async function(object, method, ...args){
+	return Q.fcall(await object[method].bind(object), ...args)
 }
 
 Q.resetUnhandledRejections = function(){}
