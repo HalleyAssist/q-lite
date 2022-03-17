@@ -75,6 +75,7 @@ class CancellationState {
 		const {cancelFn, doRemove} = this._deferredWrapFns(new WeakRef(deferred))
 		this._child.add(cancelFn)
 		deferred.promise.then(doRemove, doRemove)
+		return deferred
 	}
 
 	cancel() {
