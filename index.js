@@ -40,7 +40,7 @@ class QPromise extends Promise {
 	}
 }
 
-class CancellationError {
+class CancellationError extends Error {
 	constructor(message = 'cancel') {
 		this.message = message
 		this.code = "ECANCEL"
