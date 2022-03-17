@@ -57,7 +57,7 @@ class CancellationState {
 		const cancelFn = promise.cancel
 		if (cancelFn) {
 			this._child.add(cancelFn)
-			const doRemove = () => this._child.delete(cancelFn)
+			const doRemove = () => this._child && this._child.delete(cancelFn)
 			promise.then(doRemove, doRemove)
 		}
 		return promise
@@ -68,7 +68,7 @@ class CancellationState {
 			if(!deferred) return
 			deferred.reject(new CancellationError())
 		}
-		const doRemove = () => this._child.delete(cancelFn)
+		const doRemove = () =>this._child &&  this._child.delete(cancelFn)
 		return {cancelFn, doRemove}
 	}
 	deferredWrap(deferred){
