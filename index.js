@@ -52,7 +52,7 @@ class CancellationState {
 		this.cancelled = false
 		this._child = new Set()
 	}
-	cancelWrap(promise) {
+	promiseWrap(promise) {
 		if(this.cancelled) throw new CancellationError('Already cancelled')
 		const cancelFn = promise.cancel
 		if (cancelFn) {
@@ -61,6 +61,20 @@ class CancellationState {
 			promise.then(doRemove, doRemove)
 		}
 		return promise
+	}
+	_deferredWrapFns(weakDeferred){
+		const cancelFn = ()=>{
+			const deferred = weakDeferred.deref()
+			if(!deferred) return
+			deferred.reject(new CancellationError())
+		}
+		const doRemove = () => this._child.delete(cancelFn)
+		return {cancelFn, doRemove}
+	}
+	deferredWrap(deferred){
+		const {cancelFn, doRemove} = this._deferredWrapFns(new WeakRef(deferred))
+		this._child.add(cancelFn)
+		deferred.promise.then(doRemove, doRemove)
 	}
 
 	cancel() {
@@ -90,13 +104,12 @@ Q.canceller = function (fn) {
 	// fn will be called with CancellationState as the first argument, followed by it's own arguments
 	return function (...args) {
 		const state = new CancellationState()
-		const promise = fn(state, ...args)
+		const promise = fn.call(this, state, ...args)
 		promise.cancel = function () {
 			state.cancel()
 		}
 		return promise
 	}
-
 }
 
 Q.defer = function defer() {
