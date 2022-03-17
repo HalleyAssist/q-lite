@@ -42,6 +42,7 @@ class QPromise extends Promise {
 
 class CancellationError extends Error {
 	constructor(message = 'cancel') {
+		super()
 		this.message = message
 		this.code = "ECANCEL"
 	}
@@ -72,6 +73,7 @@ class CancellationState {
 		return {cancelFn, doRemove}
 	}
 	deferredWrap(deferred){
+		if(this.cancelled) throw new CancellationError('Already cancelled')
 		const {cancelFn, doRemove} = this._deferredWrapFns(new WeakRef(deferred))
 		this._child.add(cancelFn)
 		deferred.promise.then(doRemove, doRemove)
