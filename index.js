@@ -276,7 +276,7 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 			else deferred.reject(e)
 		}, ms)
 	}
-	deferred.extend(ms)
+	deferred.promise.extend(ms)
 
 	return deferred.promise
 }
