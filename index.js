@@ -255,11 +255,7 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 	const deferred = Q.defer()
 
 	const e = new Error(message ? message : `Timed out after ${ms} ms`)
-	const timeout = setTimeout(() => {
-		e.code = 'ETIMEDOUT'
-		if (overloadSafe) setImmediate(deferred.reject, e)
-		else deferred.reject(e)
-	}, ms)
+	let timeout
 
 	promise.then(deferred.resolve, deferred.reject).then(() => {
 		clearTimeout(timeout)
@@ -269,6 +265,18 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 		if (promise.cancel) promise.cancel()
 		deferred.reject('cancelled')
 	}
+
+	deferred.promise.extend = (ms)=>{
+		if(timeout){
+			clearTimeout(timeout)
+		}
+		timeout = setTimeout(() => {
+			e.code = 'ETIMEDOUT'
+			if (overloadSafe) setImmediate(deferred.reject, e)
+			else deferred.reject(e)
+		}, ms)
+	}
+	deferred.extend(ms)
 
 	return deferred.promise
 }
