@@ -47,7 +47,7 @@ jobs:
         mv /tmp/a package.json
       if: "startsWith(github.ref, 'refs/tags/v')"
     - run: |
-        npm login --scope=@halleyassist --registry=https://registry.npmjs.org/
+        # npm login --scope=@halleyassist --registry=https://registry.npmjs.org/
         npm whoami
     - run: |
         npm publish
