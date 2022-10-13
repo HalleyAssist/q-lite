@@ -36,6 +36,7 @@ jobs:
       uses: actions/setup-node@master
       with:
         node-version: 16
+        registry-url: 'https://registry.npmjs.org'
     - name: Install modules
       run: |
         npm install
