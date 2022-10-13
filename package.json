@@ -1,7 +1,7 @@
 {
-  "name": "q-lite",
+  "name": "@halleyassist/q-lite",
   "version": "0.9.0",
-  "description": "A fake implementaion of Q",
+  "description": "A light implementaion of Q",
   "keywords": [
   ],
   "scripts": {
@@ -16,5 +16,5 @@
     "chai": "^4.2.0",
     "mocha": "^8.2.1"
   },
-  "repository": "splitice/q-lite"
+  "repository": "HalleyAssist/q-lite"
 }
