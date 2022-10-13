@@ -1,0 +1,52 @@
+name: Build
+on:
+  push:
+
+jobs:
+  check_eslint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install modules
+      run: |
+        sudo npm install -g eslint
+    - run: eslint index.js --ext .js,.jsx,.ts,.tsx
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@master
+    - name: Set up Node.js
+      uses: actions/setup-node@master
+      with:
+        node-version: 17
+    - run: |
+        npm install
+    - run: |
+        npm run-script test
+  npm:
+    name: npm-publish
+    runs-on: ubuntu-latest
+    needs: [check_eslint,test]
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@master
+    - name: Set up Node.js
+      uses: actions/setup-node@master
+      with:
+        node-version: 16.14.2
+    - name: Install modules
+      run: |
+        npm install
+    - name: Test
+      run: npm test
+    - name: Publish if version has been updated
+      uses: HalleyAssist/npm-publish-action@master
+      with: # All of theses inputs are optional
+        tag_name: "v%s"
+        tag_message: "v%s"
+        commit_pattern: "^Release (\\S+)"
+        workspace: "."
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this as is, it's automatically generated
+        NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # You need to set this in your repo settings
