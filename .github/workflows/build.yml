@@ -46,7 +46,7 @@ jobs:
         jq '.version="'"$VERSION"'"' package.json > /tmp/a
         mv /tmp/a package.json
     - run: |
-        npm npm-publish
+        npm  publish
       env: 
         NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # You need to set this in your repo settings
     - uses: actions/setup-node@v2
