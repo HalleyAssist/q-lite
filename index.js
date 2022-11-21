@@ -351,4 +351,6 @@ Q.isRejected = function (promise) {
 	return _promiseState(promise) == 2
 }
 
+Q.CancellationError = CancellationError
+
 module.exports = Q

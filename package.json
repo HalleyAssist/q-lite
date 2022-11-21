@@ -2,18 +2,16 @@
   "name": "@halleyassist/q-lite",
   "version": "0.9.2",
   "description": "A light implementaion of Q",
-  "keywords": [
-  ],
+  "keywords": [],
   "scripts": {
     "test": "mocha"
   },
   "main": "index.js",
   "author": "Mathew Heard",
   "license": "ISC",
-  "dependencies": {
-  },
   "devDependencies": {
     "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "mocha": "^8.2.1"
   },
   "repository": "HalleyAssist/q-lite",
