@@ -5,7 +5,7 @@ var chaiAsPromised = require("chai-as-promised");
 
 chai.use(chaiAsPromised);
 
-describe('Q cancellation tests', function(){
+describe('Q Cancellation tests', function(){
     it('Cancellation check tets', async() => {
         const C = Q.canceller(async function(cancellationState){
             await Q.delay(50)
@@ -28,6 +28,22 @@ describe('Q cancellation tests', function(){
             }
             cancellationState.promiseWrap(innerP)
             return await innerP
+        })
+
+        const p = C()
+        p.cancel()
+        await expect(deferred.promise).to.eventually.be.true
+    })
+    it('Canceller should call inner cancel', async() => {
+        const deferred = Q.defer()
+        const C = Q.canceller(function(cancellationState){
+            const innerP = new Promise((resolve, reject) => {
+                
+            })
+            innerP.cancel = function(){
+                deferred.resolve(true)
+            }
+            return innerP
         })
 
         const p = C()

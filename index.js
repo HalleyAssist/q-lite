@@ -108,7 +108,9 @@ Q.canceller = function (fn) {
 	return function (...args) {
 		const state = new CancellationState()
 		const promise = fn.call(this, state, ...args)
+		const promiseCancel = promise.cancel
 		promise.cancel = function () {
+			if(promiseCancel) promiseCancel.call(promise)
 			state.cancel()
 		}
 		return promise
