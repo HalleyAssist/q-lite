@@ -38,6 +38,21 @@ class QPromise extends Promise {
 	isRejected() {
 		return Q.isRejected(this)
 	}
+
+	static async all(promises, cancel = true){
+		if(!cancel) {
+			return super.all(promises)
+		}
+
+		try {
+			await super.all(promises)
+		} catch(ex){
+			for(const p of promises){
+				if(p.cancel) p.cancel()
+			}
+			throw ex
+		}
+	}
 }
 
 class CancellationError extends Error {
@@ -309,8 +324,8 @@ Q.finvoke = async function (object, method, ...args) {
 
 Q.resetUnhandledRejections = function () { }
 
-Q.all = function (values) {
-	return QPromise.all(values)
+Q.all = function (values, cancel = true) {
+	return QPromise.all(values, cancel)
 }
 
 Q.reject = (reason) => QPromise.reject(reason)
