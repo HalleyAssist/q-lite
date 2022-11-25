@@ -45,7 +45,7 @@ class QPromise extends Promise {
 		}
 
 		try {
-			await super.all(promises)
+			return await super.all(promises)
 		} catch(ex){
 			for(const p of promises){
 				if(p.cancel) p.cancel()
