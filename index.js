@@ -314,8 +314,9 @@ async function safeAll(values, cancelFn)  {
 	cancelFn(()=>{
 		deferred.reject(new CancellationError())
 	})
+	const allPromise = Promise.all(values)
 	try {
-		await Promise.race([deferred.promise, Promise.all(values)])
+		await Promise.race([deferred.promise, allPromise])
 	} catch(ex){
 		for(const p of values){
 			if(p.cancel) p.cancel()
@@ -324,6 +325,7 @@ async function safeAll(values, cancelFn)  {
 	} finally {
 		deferred.resolve()
 	}
+	return await allPromise
 }
 
 Q.safeAll = function(values){

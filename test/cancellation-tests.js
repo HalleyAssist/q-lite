@@ -84,4 +84,16 @@ describe('Q Cancellation tests', function(){
         }   
         expect(cancelCalled).to.be.equal(1)
     })
+    it("Q.all should return values", async function(){
+        const deferreds = [Q.defer(), Q.defer()]
+        const allPromise = Q.all([deferreds[0].promise, deferreds[1].promise])
+        allPromise.catch(()=>{})
+
+        deferreds[0].resolve(1)
+        deferreds[1].resolve(2)
+
+        let ret = await allPromise
+        expect(ret[0]).to.be.equal(1)
+        expect(ret[1]).to.be.equal(2)
+    })
 })
