@@ -387,7 +387,6 @@ Q.CancellationError = CancellationError
 async function singularize(fn, cancelFn, args){
 	const deferred = Q.defer()
 	cancelFn(()=>{
-		cancelled = true
 		deferred.reject(new CancellationError())
 	})
 
