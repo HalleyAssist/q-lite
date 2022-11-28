@@ -384,4 +384,36 @@ Q.isRejected = function (promise) {
 
 Q.CancellationError = CancellationError
 
+async function singularize(fn, cancelFn, args){
+	const deferred = Q.defer()
+	cancelFn(()=>{
+		cancelled = true
+		deferred.reject(new CancellationError())
+	})
+
+	const p = fn(...args)
+	await Q.cancelledRace([p, deferred.promise])
+
+	return await p
+}
+
+Q.singularize = function(fn){
+	let currentPromise = null
+	return function(...args){
+		if(currentPromise) {
+			return currentPromise
+		}
+
+		let cancel
+		const ret = singularize(fn, c=>cancel=c, args)
+		ret.cancel = cancel
+		currentPromise = ret
+		ret.catch(()=>{}).then(()=>{
+			currentPromise = null
+		})
+
+		return ret
+	}
+}
+
 module.exports = Q
