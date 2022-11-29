@@ -415,4 +415,39 @@ Q.singularize = function(fn){
 	}
 }
 
+
+async function safeyAwait(cancelFn, primaryValues, secondaryValues){
+	let dd
+	for(let i = 0; i < secondaryValues.length; i++){
+		dd = Q.defer()
+		const promise = secondaryValues[i]
+		promise.then(dd.resolve, dd.reject)
+		dd.promise.resolve = dd.resolve
+		secondaryValues[i] = dd.promise
+	}
+
+	let deferred = dd
+	if(!deferred) {
+		deferred = Q.defer()
+		deferred.promise.resolve = deferred.resolve
+		secondaryValues.push(deferred.promise)
+	}
+	cancelFn(()=>deferred.reject(Q.CancellationError))
+
+	try {
+		await Promise.race([...primaryValues, ...secondaryValues])
+	} finally {
+		for(const p of secondaryValues){
+			p.resolve()
+		}
+	}
+}
+
+Q.safeyAwait = function(primaryValues, secondaryValues) {
+	let cancel
+	const ret = safeyAwait(c=>cancel=c, primaryValues, secondaryValues)
+	ret.cancel = cancel
+	return ret
+}
+
 module.exports = Q
