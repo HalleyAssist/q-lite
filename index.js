@@ -150,7 +150,6 @@ function isPrimitive(value) {
 
 Q.safeRace = async function(contenders) {
 	let deferreds = [], promises = []
-	//const wm = new WeakMap()
 	for (let contender of contenders) {
 		const deferred = Q.defer()
 		deferreds.push(deferred)
@@ -159,14 +158,6 @@ Q.safeRace = async function(contenders) {
 		if(!contender.then){
 			deferred.resolve(contender)
 		} else {
-			/*wm.set(contender, deferred)
-			contender.then(function(a){
-				const d = wm.get(contender)
-				if(d) d.resolve(a)
-			}, function(a){
-				const d = wm.get(contender)
-				if(d) d.reject(a)
-			})*/
 			contender.then(deferred.resolve, deferred.reject)
 		}
 	}
