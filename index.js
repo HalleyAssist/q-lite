@@ -58,8 +58,14 @@ class CancellationState {
 		const cancelFn = promise.cancel
 		if (cancelFn) {
 			this._child.add(cancelFn)
-			const doRemove = () => this._child && this._child.delete(cancelFn)
-			promise.then(doRemove, doRemove)
+			const doRemove = a => {
+				if(this._child)this._child.delete(cancelFn)
+				return a
+			}
+			return promise.then(doRemove, e=>{
+				doRemove()
+				throw e
+			})
 		}
 		return promise
 	}
@@ -69,14 +75,20 @@ class CancellationState {
 			if(!deferred) return
 			deferred.reject(new CancellationError())
 		}
-		const doRemove = () =>this._child &&  this._child.delete(cancelFn)
+		const doRemove = a => {
+			if(this._child) this._child.delete(cancelFn)
+			return a
+		}
 		return {cancelFn, doRemove}
 	}
 	deferredWrap(deferred){
 		if(this.cancelled) throw new CancellationError('Already cancelled')
 		const {cancelFn, doRemove} = this._deferredWrapFns(new WeakRef(deferred))
 		this._child.add(cancelFn)
-		deferred.promise.then(doRemove, doRemove)
+		deferred.promise = deferred.promise.then(doRemove, e=>{
+			doRemove()
+			throw e
+		})
 		return deferred
 	}
 
