@@ -234,14 +234,22 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 }
 
 Q.timewarn = async function (promise, ms, fn, message = undefined) {
-	const ex = new Error(message ? message : `Timed out after ${ms} ms`)
-    function doCall() {
+	let ex = new Error(message ? message : `Timed out after ${ms} ms`)
+    async function doCall() {
+		if(!ex) return
 		ex.code = 'ETIMEDOUT'
-        fn(ex)
+
+		// if returns true or a ms value we should wait again
+		const requeue = await fn(ex)
+        if(requeue){
+			if(!ex) return
+			timeout = setTimeout(doCall, Number.isInteger(requeue) ? requeue : ms)
+		}
     }
-    const timeout = setTimeout(doCall, ms)
+    let timeout = setTimeout(doCall, ms)
     function doClear(v){
         clearTimeout(timeout)
+		ex = null
 		return v
     }
     function doClearEx(ex){
