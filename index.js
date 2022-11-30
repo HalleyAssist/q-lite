@@ -107,7 +107,7 @@ Q.canceller = function (fn) {
 	// fn will be called with CancellationState as the first argument, followed by it's own arguments
 	return function (...args) {
 		const state = new CancellationState()
-		const promise = fn.call(this, state, ...args)\
+		const promise = fn.call(this, state, ...args)
 		if(!promise?.then) return promise
 		const promiseCancel = promise.cancel
 		promise.cancel = function () {
@@ -231,6 +231,25 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 	deferred.promise.extend(ms)
 
 	return deferred.promise
+}
+
+Q.timewarn = async function (promise, ms, fn, message = undefined) {
+	const ex = new Error(message ? message : `Timed out after ${ms} ms`)
+    function doCall() {
+		ex.code = 'ETIMEDOUT'
+        fn(ex)
+    }
+    const timeout = setTimeout(doCall, ms)
+    function doClear(v){
+        clearTimeout(timeout)
+		return v
+    }
+    function doClearEx(ex){
+        doClear()
+        throw ex
+    }
+    
+    return await promise.then(doClear, doClearEx)
 }
 
 Q.deferredTimeout = function (deferred, ms, symbol = undefined, overloadSafe = true) {
