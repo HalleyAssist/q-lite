@@ -141,13 +141,6 @@ Q.delay = function (ms) {
 	return ret
 }
 
-function isPrimitive(value) {
-	return (
-		value === null ||
-		(typeof value !== "object" && typeof value !== "function")
-	);
-}
-
 Q.safeRace = async function(contenders) {
 	let deferreds = [], promises = []
 	for (let contender of contenders) {
