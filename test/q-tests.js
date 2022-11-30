@@ -1,3 +1,4 @@
+const { resolve } = require('../index');
 const Q = require('../index'),
      {expect} = require('chai')
 
@@ -70,6 +71,18 @@ describe('Q tests', function(){
             // this is required to prevent GC of ds
             expect(ds.length).to.be.eql(200)
         })
+        it('should return with the resolved value', async function(){
+            async function testFn(){
+                const deferred = Q.defer()
+                const promise = new Promise(function(resolve){
+                    resolve(1)
+                })
+                const p = Q.safeRace([deferred.promise,promise])
+                deferred.resolve()
+                expect(await p).to.be.eql(1)
+            }
+            await testFn()
+         })
         it('should preserve stack', async function(){
             async function testFn(){
                 const deferred = Q.defer()

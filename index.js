@@ -156,7 +156,7 @@ Q.safeRace = async function(contenders) {
 	}
 
 	try {
-		await Promise.race(promises)
+		return await Promise.race(promises)
 	} finally {
 		for (const deferred of deferreds) {
 			deferred.resolve()
