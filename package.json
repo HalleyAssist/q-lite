@@ -4,7 +4,7 @@
   "description": "A light implementaion of Q",
   "keywords": [],
   "scripts": {
-    "test": "mocha"
+    "test": "mocha --expose-gc"
   },
   "main": "index.js",
   "author": "Mathew Heard",

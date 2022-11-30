@@ -148,71 +148,36 @@ function isPrimitive(value) {
 	);
 }
 
-// Keys are the values passed to race, values are a record of data containing a
-// set of deferreds and whether the value has settled.
-const wm = new WeakMap();
+Q.safeRace = async function(contenders) {
+	let deferreds = [], promises = []
+	//const wm = new WeakMap()
+	for (let contender of contenders) {
+		const deferred = Q.defer()
+		deferreds.push(deferred)
+		promises.push(deferred.promise)
 
-// This NodeJS / v8 issue show the stupidity of Promise.race
-// Issue: https://github.com/nodejs/node/issues/17469
-// Fortunately a nice guy (brainkim) wrote a safeRace function
-
-Q.safeRace = function (contenders) {
-	let deferred;
-	const result = new Promise((resolve, reject) => {
-		deferred = { resolve, reject };
-		for (const contender of contenders) {
-			if (isPrimitive(contender)) {
-				// If the contender is a primitive, attempting to use it as a key in the
-				// weakmap would throw an error. Luckily, it is safe to call
-				// `Promise.resolve(contender).then` on a primitive value multiple times
-				// because the promise fulfills immediately.
-				Promise.resolve(contender).then(resolve, reject);
-				continue;
-			}
-
-			let record = wm.get(contender);
-			if (record === undefined) {
-				record = { deferreds: new Set([deferred]), settled: false };
-				wm.set(contender, record);
-				// This call to `then` happens once for the lifetime of the value.
-				Promise.resolve(contender).then(
-					(value) => {
-						record.settled = true;
-						for (const { resolve } of record.deferreds) {
-							resolve(value);
-						}
-
-						record.deferreds.clear();
-					},
-					(err) => {
-						record.settled = true;
-						for (const { reject } of record.deferreds) {
-							reject(err);
-						}
-
-						record.deferreds.clear();
-					},
-				);
-			} else if (record.settled) {
-				// If the value has settled, it is safe to call
-				// `Promise.resolve(contender).then` on it.
-				Promise.resolve(contender).then(resolve, reject);
-			} else {
-				record.deferreds.add(deferred);
-			}
+		if(!contender.then){
+			deferred.resolve(contender)
+		} else {
+			/*wm.set(contender, deferred)
+			contender.then(function(a){
+				const d = wm.get(contender)
+				if(d) d.resolve(a)
+			}, function(a){
+				const d = wm.get(contender)
+				if(d) d.reject(a)
+			})*/
+			contender.then(deferred.resolve, deferred.reject)
 		}
-	});
+	}
 
-	// The finally callback executes when any value settles, preventing any of
-	// the unresolved values from retaining a reference to the resolved value.
-	return result.finally(() => {
-		for (const contender of contenders) {
-			if (!isPrimitive(contender)) {
-				const record = wm.get(contender);
-				record.deferreds.delete(deferred);
-			}
+	try {
+		await Promise.race(promises)
+	} finally {
+		for (const deferred of deferreds) {
+			deferred.resolve()
 		}
-	});
+	}
 }
 
 Q.cancelledRace = async function (promises, safeRace = true) {
@@ -305,6 +270,12 @@ Q.ninvoke = async function (object, method, ...args) {
 
 Q.finvoke = async function (object, method, ...args) {
 	return Q.fcall(await object[method].bind(object), ...args)
+}
+
+Q.nextTick = function(){
+	return new Promise(resolve=>{
+		process.nextTick(resolve)
+	})
 }
 
 Q.resetUnhandledRejections = function () { }
