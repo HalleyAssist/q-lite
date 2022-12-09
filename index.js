@@ -399,7 +399,7 @@ Q.singularize = function(fn){
 		}
 
 		let cancel
-		const ret = singularize(fn, c=>cancel=c, args)
+		const ret = singularize(fn.bind(this), c=>cancel=c, args)
 		ret.cancel = cancel
 		currentPromise = ret
 		ret.catch(()=>{}).then(()=>{
