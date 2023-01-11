@@ -7,6 +7,25 @@ function getHeap(){
     const usage = process.memoryUsage();
     return usage.heapUsed
 }
+async function randomString(length) {
+    let result = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    await Q.nextTick()
+    return result;
+}
+
+function rs(length = 10000){
+    let result = "";
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result
+}
+
 describe('Q tests', function(){
     describe('safeRace', function(){
         it('defer should not leak on unresolved', async function(){
@@ -39,25 +58,6 @@ describe('Q tests', function(){
 
     describe('safeRace', function(){
         it('safeRace should not leak on unresolved', async function(){
-            async function randomString(length) {
-                let result = "";
-                const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                for (let i = 0; i < length; i++) {
-                    result += characters.charAt(Math.floor(Math.random() * characters.length));
-                }
-                await Q.nextTick()
-                return result;
-            }
-
-            function rs(length = 10000){
-                let result = "";
-                const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                for (let i = 0; i < length; i++) {
-                    result += characters.charAt(Math.floor(Math.random() * characters.length));
-                }
-                return result
-            }
-
             let ds = [], dswarm = []
 
             const beforeHeap = getHeap()
@@ -110,6 +110,68 @@ describe('Q tests', function(){
 
             expect(finalHeap - afterLeakHeap < 100000).to.be.true
         })
+        it('safeRace should not leak on unresolved 2', async function(){
+            const deferred1 = Q.defer()
+            const deferred2 = Q.defer()
+
+            const beforeHeap = getHeap()
+
+            for(let i = 0; i < 100000; i++){
+                Q.safeRace([deferred1.promise, deferred2.promise])        
+            }
+
+            const leakHeap = getHeap()
+            let diff = leakHeap - beforeHeap
+            console.log({beforeHeap, leakHeap, diff})
+
+            expect(diff > 1000000).to.be.true
+
+            deferred2.resolve()
+
+            await Q.delay(10)
+
+            const afterHeap = getHeap()
+            diff = afterHeap - beforeHeap
+            console.log({beforeHeap, afterHeap, diff})
+
+            expect(diff < 300000).to.be.true
+        })
+
+        // this WILL leak
+        /*
+        it('safeRace should not leak on unresolved 3', async function(){
+            const deferred1 = Q.defer()
+            const deferred2 = Q.defer()
+
+            const beforeHeap = getHeap()
+
+            async function a(){
+                await Q.safeRace([deferred1.promise, deferred2.promise])
+            }
+
+            for(let i = 0; i < 100000; i++){
+                a()
+            }
+
+            const leakHeap = getHeap()
+            let diff = leakHeap - beforeHeap
+            console.log({beforeHeap, leakHeap, diff})
+
+            expect(diff > 1000000).to.be.true
+
+            deferred2.resolve()
+
+            await Q.delay(10)
+            await Q.delay(10)
+
+            const afterHeap = getHeap()
+            diff = afterHeap - beforeHeap
+            console.log({beforeHeap, afterHeap, diff})
+
+            expect(diff < 300000).to.be.true
+        })
+        */
+       
         it('should return with the resolved value', async function(){
             async function testFn(){
                 const deferred = Q.defer()
@@ -208,25 +270,6 @@ describe('Q tests', function(){
     })
     describe('cancelledRace', function(){
         it('cancelledRace should not leak on unresolved', async function(){
-            async function randomString(length) {
-                let result = "";
-                const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                for (let i = 0; i < length; i++) {
-                    result += characters.charAt(Math.floor(Math.random() * characters.length));
-                }
-                await Q.nextTick()
-                return result;
-            }
-
-            function rs(length = 10000){
-                let result = "";
-                const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-                for (let i = 0; i < length; i++) {
-                    result += characters.charAt(Math.floor(Math.random() * characters.length));
-                }
-                return result
-            }
-
             let ds = [], dswarm = []
 
             const beforeHeap = getHeap()
