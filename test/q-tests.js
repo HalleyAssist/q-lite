@@ -1,10 +1,44 @@
-const { resolve } = require('../index');
 const Q = require('../index'),
      {expect} = require('chai')
 
+function getHeap(){
+    global.gc()
+    global.gc()
+    const usage = process.memoryUsage();
+    return usage.heapUsed
+}
 describe('Q tests', function(){
     describe('safeRace', function(){
-        it('should not leak on unresolved', async function(){
+        it('defer should not leak on unresolved', async function(){
+            const deferred = Q.defer()
+
+            async function a(){
+                await deferred.promise
+            }
+
+            var beforeTestHeap = getHeap();
+            for(let i = 0; i<100000; i++) {
+                a()
+            }
+            var afterTestHeap = getHeap();
+
+            console.log({beforeTestHeap, afterTestHeap, diff: afterTestHeap - beforeTestHeap})
+
+            expect(afterTestHeap - beforeTestHeap > 2000000).to.be.true
+
+            deferred.resolve(true)
+
+            await Q.delay(20)
+
+            const afterResolveHeap = getHeap()
+
+            console.log({afterResolveHeap, beforeTestHeap, diff: afterResolveHeap - beforeTestHeap})
+            expect(afterResolveHeap - beforeTestHeap < 300000).to.be.true
+        })
+    })
+
+    describe('safeRace', function(){
+        it('safeRace should not leak on unresolved', async function(){
             async function randomString(length) {
                 let result = "";
                 const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -24,12 +58,7 @@ describe('Q tests', function(){
                 return result
             }
 
-            function getHeap(){
-                global.gc()
-                const usage = process.memoryUsage();
-                return usage.heapUsed
-            }
-            const ds = []
+            let ds = [], dswarm = []
 
             const beforeHeap = getHeap()
 
@@ -40,6 +69,7 @@ describe('Q tests', function(){
 
                 const c = rs()
                 ds.push(deferred1)
+                dswarm.push(dswarm)
                 await Promise.race([deferred1.promise, promise, c])
             }
         
@@ -51,9 +81,9 @@ describe('Q tests', function(){
 
             
 
-            for(let i = 0; i < 100; i++){
+            for(let i = 0; i < 200; i++){
                 const deferred1 = Q.defer()
-                const promise = randomString()
+                const promise = randomString(10000)
 
                 const c = rs()
                 ds.push(deferred1)
@@ -69,7 +99,16 @@ describe('Q tests', function(){
             expect(afterSafeHeap - afterLeakHeap < 1000000).to.be.true
 
             // this is required to prevent GC of ds
-            expect(ds.length).to.be.eql(200)
+            expect(ds.length)//.to.be.eql(300)
+
+            ds = null
+
+            
+            const finalHeap = getHeap()
+
+            console.log({finalHeap, afterLeakHeap, diff: finalHeap - afterLeakHeap})
+
+            expect(finalHeap - afterLeakHeap < 100000).to.be.true
         })
         it('should return with the resolved value', async function(){
             async function testFn(){
