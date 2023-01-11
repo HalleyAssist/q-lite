@@ -207,6 +207,78 @@ describe('Q tests', function(){
          })
     })
     describe('cancelledRace', function(){
+        it('cancelledRace should not leak on unresolved', async function(){
+            async function randomString(length) {
+                let result = "";
+                const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                for (let i = 0; i < length; i++) {
+                    result += characters.charAt(Math.floor(Math.random() * characters.length));
+                }
+                await Q.nextTick()
+                return result;
+            }
+
+            function rs(length = 10000){
+                let result = "";
+                const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+                for (let i = 0; i < length; i++) {
+                    result += characters.charAt(Math.floor(Math.random() * characters.length));
+                }
+                return result
+            }
+
+            let ds = [], dswarm = []
+
+            const beforeHeap = getHeap()
+
+            for(let i = 0; i < 100; i++){
+                const deferred1 = Q.defer()
+                const promise = randomString(10000)
+        
+
+                const c = rs()
+                ds.push(deferred1)
+                dswarm.push(dswarm)
+                await Promise.race([deferred1.promise, promise, c])
+            }
+        
+        
+            await Q.delay(10)
+            const afterLeakHeap = getHeap()
+
+            expect(afterLeakHeap - beforeHeap > 1000000).to.be.true
+
+            
+
+            for(let i = 0; i < 200; i++){
+                const deferred1 = Q.defer()
+                const promise = randomString(10000)
+
+                const c = rs()
+                ds.push(deferred1)
+        
+                await Q.cancelledRace([deferred1.promise, promise, c])
+            }
+
+            await Q.delay(10)
+            const afterSafeHeap = getHeap()
+
+            console.log({afterLeakHeap, afterSafeHeap, diff: afterSafeHeap - afterLeakHeap})
+
+            expect(afterSafeHeap - afterLeakHeap < 1000000).to.be.true
+
+            // this is required to prevent GC of ds
+            expect(ds.length)//.to.be.eql(300)
+
+            ds = null
+
+            
+            const finalHeap = getHeap()
+
+            console.log({finalHeap, afterLeakHeap, diff: finalHeap - afterLeakHeap})
+
+            expect(finalHeap - afterLeakHeap < 100000).to.be.true
+        })
         it('should preserve stack', async function(){
             async function testFn(){
                 const deferred = Q.defer()
