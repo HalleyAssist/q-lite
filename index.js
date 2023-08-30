@@ -224,7 +224,11 @@ function timeoutHandle(e, deferred, overloadSafe) {
 Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 	const deferred = Q.defer()
 
-	const e = new Error(message ? message : `Timed out after ${ms} ms`)
+	const stackTraceLimit = Error.stackTraceLimit
+	Error.stackTraceLimit = 10
+	let e = new Error(message ? message : `Timed out after ${ms} ms`)
+	Error.stackTraceLimit = stackTraceLimit
+
 	let timeout
 
 	promise.then(deferred.resolve, deferred.reject).then(() => {
@@ -235,6 +239,7 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 		try {
 			if (promise.cancel) promise.cancel()
 		} finally {
+			e = null
 			deferred.reject(new CancellationError())
 			clearTimeout(timeout)
 		}
