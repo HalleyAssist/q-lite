@@ -215,7 +215,7 @@ Q.nfcall = function (fn, ...args) {
 	})
 }
 
-function timeoutHandle(e, deferred) {
+function timeoutHandle(e, deferred, overloadSafe) {
 	e.code = 'ETIMEDOUT'
 	if (overloadSafe) setImmediate(deferred.reject, e)
 	else deferred.reject(e)
@@ -244,7 +244,7 @@ Q.timeout = function (promise, ms, message = undefined, overloadSafe = true) {
 		if(timeout){
 			clearTimeout(timeout)
 		}
-		timeout = setTimeout(timeoutHandle, ms, e, deferred)
+		timeout = setTimeout(timeoutHandle, ms, e, deferred, overloadSafe)
 	}
 	deferred.promise.extend(ms)
 
