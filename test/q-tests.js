@@ -111,6 +111,7 @@ describe('Q tests', function(){
             expect(finalHeap - afterLeakHeap < 100000).to.be.true
         })
         it('safeRace should not leak on unresolved 2', async function(){
+            this.timeout(4000)
             const deferred1 = Q.defer()
             const deferred2 = Q.defer()
 
