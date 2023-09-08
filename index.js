@@ -254,13 +254,15 @@ let nextTickTimer = null
 function addTimer(fn, ms){
 	const now = Date.now()
 	const timeToRun = now + ms
+	fn.time = timeToRun
+
 	if(nextTimer.time > timeToRun){
 		nextTimer = fn
-		nextTimer.time = timeToRun
-
 		if(nextTickTimer === null) {
 			nextTickTimer = setTimeout(executeTimerTick, 25, now + 25)
 		}
+	} else {
+		timers.add(fn)
 	}
 
 }
@@ -272,12 +274,16 @@ function adjustTimer(fn, ms){
 		for(const t in timers){
 			if(t.time < fn.time) {
 				nextTimer = t
-				clearTimeout(nextTickTimer)
 				timers.add(fn)
 				return
 			}	
 		}
-	}	
+	}else{
+		if(fn.time < nextTimer.time){
+			timers.add(nextTimer)
+			nextTimer = fn
+		}
+	}
 }
 
 function clearTimer(fn){
