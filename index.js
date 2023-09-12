@@ -342,6 +342,13 @@ function executeTimerTick(scheduled){
 	}
 }
 
+Q._debugTimer = function(){
+	return {
+		nextTimer,
+		nextTickTimer
+	}
+}
+
 Q.timeout = function (promise, ms, message = undefined) {
 	const deferred = Q.defer()
 
