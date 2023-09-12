@@ -295,6 +295,10 @@ function clearTimer(fn){
 				nextTimer = t
 			}
 		}
+		if(nextTimer === EmptyTimer){
+			clearTimeout(nextTickTimer)
+			nextTickTimer = null
+		}
 	} else {
 		timers.delete(fn)
 	}
@@ -305,7 +309,7 @@ function executeTimerTick(scheduled){
 	const workingTime = (now + scheduled) / 2
 
 	if(nextTimer.time > workingTime){
-		if(nextTickTimer !== EmptyTimer){
+		if(nextTimer !== EmptyTimer){
 			nextTickTimer = setTimeout(executeTimerTick, 25, Math.min(now + 25, workingTime + 50))
 		} else {
 			nextTickTimer = null
