@@ -180,7 +180,12 @@ Q.safeRace = async function(contenders) {
 Q.cancelledRace = async function (promises, safeRace = true) {
 	let ret
 	try {
-		ret = await (safeRace ? Q.safeRace : Promise.race)(promises)
+		if(safeRace){
+			ret = Q.safeRace(promises)
+		} else {
+			ret = Promise.race(promises)
+		}
+		ret = await ret
 	} finally {
 		for (const p of promises) {
 			if (p.cancel) p.cancel()
