@@ -262,6 +262,9 @@ function addTimer(fn, ms){
 	fn.time = timeToRun
 
 	if(nextTimer.time > timeToRun){
+		if(nextTimer !== EmptyTimer){
+			timers.add(nextTimer)
+		}
 		nextTimer = fn
 		if(nextTickTimer === null) {
 			nextTickTimer = setTimeout(executeTimerTick, 25, now + 25)
