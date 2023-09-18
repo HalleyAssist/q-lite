@@ -304,9 +304,10 @@ function clearTimer(fn){
 			}
 		}
 		if(nextTimer === EmptyTimer){
-			timers.delete(nextTimer)
 			clearTimeout(nextTickTimer)
 			nextTickTimer = null
+		} else {
+			timers.delete(nextTimer)
 		}
 	} else {
 		timers.delete(fn)
