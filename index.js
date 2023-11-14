@@ -115,6 +115,10 @@ Q.Promise = QPromise
 
 Q.CancellationError = CancellationError
 
+function AlreadyCancelledFn(){
+	throw new Error('Already cancelled')
+}
+
 Q.canceller = function (fn) {
 	// fn will be called with CancellationState as the first argument, followed by it's own arguments
 	return function (...args) {
@@ -125,6 +129,7 @@ Q.canceller = function (fn) {
 		promise.cancel = function () {
 			if(promiseCancel) promiseCancel.call(promise)
 			state.cancel()
+			promise.cancel = AlreadyCancelledFn
 		}
 		return promise
 	}
