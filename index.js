@@ -62,10 +62,12 @@ class CancellationState {
 				if(this._child)this._child.delete(cancelFn)
 				return a
 			}
-			return promise.then(doRemove, e=>{
+			const c = promise.then(doRemove, e=>{
 				doRemove()
 				throw e
 			})
+			c.cancel = cancelFn
+			return c
 		}
 		return promise
 	}
