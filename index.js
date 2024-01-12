@@ -1,5 +1,7 @@
 const util = require('util')
 
+const { eventLoopUtilization } = require('perf_hooks').performance;
+
 class QPromise extends Promise {
 	constructor(executor) {
 		super(executor);
@@ -374,9 +376,27 @@ Q.timeout = function (promise, ms, message = undefined) {
 	const deferred = Q.defer()
 
 	const e = new Error(message ? message : `Timed out after ${ms} ms`)
-	let timeout = () => {
+	const final = () => {
 		e.code = 'ETIMEDOUT'
 		deferred.reject(e)
+	}
+
+	let firstUtil = null
+	let timeout = () => {
+		// 10% of the time to run is required at the end to ensure we have executed all timer dependencies
+
+		if(!firstUtil){
+			firstUtil = eventLoopUtilization()
+			return
+		}
+
+		const elu = eventLoopUtilization(firstUtil);
+		const r = elu.idle - (ms*0.1)
+		if(r < 0) {
+			final()
+		} else {
+			addTimer(timeout, Math.max(25, r))
+		}
 	}
 
 	promise.then(deferred.resolve, deferred.reject).then(() => {
@@ -388,8 +408,10 @@ Q.timeout = function (promise, ms, message = undefined) {
 		deferred.reject(new CancellationError())
 	}
 
-	deferred.promise.extend = (ms)=>{
-		adjustTimer(timeout, ms)
+	deferred.promise.extend = (_ms)=>{
+		ms = _ms
+		firstUtil = null
+		adjustTimer(timeout, _ms)
 	}
 
 	addTimer(timeout, ms)
