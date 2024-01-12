@@ -387,6 +387,7 @@ Q.timeout = function (promise, ms, message = undefined) {
 
 		if(!firstUtil){
 			firstUtil = eventLoopUtilization()
+			addTimer(timeout, Math.max(25, r))
 			return
 		}
 
