@@ -387,13 +387,13 @@ Q.timeout = function (promise, ms, message = undefined) {
 
 		if(!firstUtil){
 			firstUtil = eventLoopUtilization()
-			addTimer(timeout, Math.max(25, r))
+			addTimer(timeout, ms * 0.11)
 			return
 		}
 
 		const elu = eventLoopUtilization(firstUtil);
 		const r = elu.idle - (ms*0.1)
-		if(r < 0) {
+		if(r <= 0) {
 			final()
 		} else {
 			addTimer(timeout, Math.max(25, r))
