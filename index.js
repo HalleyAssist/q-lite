@@ -392,7 +392,7 @@ Q.timeout = function (promise, ms, message = undefined) {
 		}
 
 		const elu = eventLoopUtilization(firstUtil);
-		const r = elu.idle - (ms*0.1)
+		const r = ms-elu.idle
 		if(r <= 0) {
 			final()
 		} else {
