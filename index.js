@@ -119,6 +119,8 @@ Q.Promise = QPromise
 
 Q.CancellationError = CancellationError
 
+Q.CancellationState = CancellationState
+
 function AlreadyCancelledFn(){
 	throw new Error('Already cancelled')
 }
