@@ -61,11 +61,11 @@ class CancellationState {
 		if (cancelFn) {
 			this._child.add(cancelFn)
 			const doRemove = a => {
-				if(this._child)this._child.delete(cancelFn)
+				if(this._child) this._child.delete(cancelFn)
 				return a
 			}
 			const c = promise.then(doRemove, e=>{
-				doRemove()
+				doRemove(undefined)
 				throw e
 			})
 			c.cancel = cancelFn
@@ -234,7 +234,10 @@ Q.nfcall = function (fn, ...args) {
 Q.timeoutExact = function (promise, ms, message = undefined, overloadSafe = true) {
 	const deferred = Q.defer()
 
-	const e = new Error(message ? message : `Timed out after ${ms} ms`)
+	let e
+	if(typeof message === 'symbol') e = message
+	else e = new Error(message ? message : `Timed out after ${ms} ms`)
+
 	let timeout
 
 	promise.then(deferred.resolve, deferred.reject).then(() => {
@@ -251,7 +254,7 @@ Q.timeoutExact = function (promise, ms, message = undefined, overloadSafe = true
 			clearTimeout(timeout)
 		}
 		timeout = setTimeout(() => {
-			e.code = 'ETIMEDOUT'
+			if(e instanceof Error) e.code = 'ETIMEDOUT'
 			if (overloadSafe) setImmediate(deferred.reject, e)
 			else deferred.reject(e)
 		}, ms)
@@ -377,9 +380,12 @@ Q._debugTimer = function(){
 Q.timeout = function (promise, ms, message = undefined) {
 	const deferred = Q.defer()
 
-	const e = new Error(message ? message : `Timed out after ${ms} ms`)
+	let e
+	if(typeof message === 'symbol') e = message
+	else e = new Error(message ? message : `Timed out after ${ms} ms`)
+
 	const final = () => {
-		e.code = 'ETIMEDOUT'
+		if(e instanceof Error) e.code = 'ETIMEDOUT'
 		deferred.reject(e)
 	}
 
