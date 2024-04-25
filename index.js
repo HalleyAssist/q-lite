@@ -55,6 +55,11 @@ class CancellationState {
 		this.cancelled = false
 		this._child = new Set()
 	}
+	addOnCancel(fn){
+		if(this.cancelled) return false
+		this._child.add(fn)
+		return true
+	}
 	promiseWrap(promise) {
 		if(this.cancelled) throw new CancellationError('Already cancelled')
 		const cancelFn = promise.cancel
