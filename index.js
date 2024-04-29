@@ -394,13 +394,14 @@ Q.timeout = function (promise, ms, message = undefined) {
 		deferred.reject(e)
 	}
 
+	let currentlyInching = false
 	let firstUtil = null
-	let timeout = () => {
+	let inchingTimeout = () => {
 		// 10% of the time to run is required at the end to ensure we have executed all timer dependencies
 
 		if(!firstUtil){
 			firstUtil = eventLoopUtilization()
-			addTimer(timeout, ms * 0.11)
+			addTimer(inchingTimeout, ms * 0.11)
 			return
 		}
 
@@ -409,12 +410,17 @@ Q.timeout = function (promise, ms, message = undefined) {
 		if(r <= 0) {
 			final()
 		} else {
-			addTimer(timeout, Math.max(25, r))
+			addTimer(inchingTimeout, Math.max(25, r))
 		}
+	}
+	let largeTimeout = () => {
+		addTimer(inchingTimeout, ms)
+		currentlyInching = true
 	}
 
 	promise.then(deferred.resolve, deferred.reject).then(() => {
-		clearTimer(timeout)
+		clearTimer(largeTimeout)
+		clearTimer(inchingTimeout)
 	})
 
 	deferred.promise.cancel = () => {
@@ -425,10 +431,29 @@ Q.timeout = function (promise, ms, message = undefined) {
 	deferred.promise.extend = (_ms)=>{
 		ms = _ms
 		firstUtil = null
-		adjustTimer(timeout, _ms)
+		if(currentlyInching) {
+			if(ms > 2000) {
+				clearTimer(inchingTimeout)
+				addTimer(largeTimeout, ms - 2000)
+				currentlyInching = false
+				ms = 2000
+			} else {
+				adjustTimer(inchingTimeout, _ms)
+			}
+		} else {
+			adjustTimer(largeTimeout, Math.max(0, ms - 2000))
+			ms = 2000
+		}
 	}
 
-	addTimer(timeout, ms)
+	// start the timeout
+	if(ms > 2000) {
+		addTimer(largeTimeout, ms - 2000)
+		ms = 2000
+	} else {
+		currentlyInching = true
+		addTimer(inchingTimeout, ms)
+	}
 
 	return deferred.promise
 }
