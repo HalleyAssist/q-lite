@@ -297,7 +297,7 @@ function addTimer(fn, ms){
 function adjustTimer(fn, ms){
 	const now = Date.now()
 	fn.time = now + ms
-	if(nextTickTimer === fn){
+	if(nextTimer === fn){
 		for(const t in timers){
 			if(t.time < fn.time) {
 				nextTimer = t
