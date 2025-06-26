@@ -401,20 +401,21 @@ Q.timeout = function (promise, ms, message = undefined) {
 
 		if(!firstUtil){
 			firstUtil = eventLoopUtilization()
-			addTimer(inchingTimeout, ms * 0.11)
+			addTimer(inchingTimeout, Math.max(50, ms * 0.11))
 			return
 		}
 
 		const elu = eventLoopUtilization(firstUtil);
-		const r = ms-elu.idle
-		if(r <= 0) {
+		ms -= elu.idle
+		if(m <= 0) {
 			final()
 		} else {
-			addTimer(inchingTimeout, Math.max(25, r))
+			firstUtil = elu
+			addTimer(inchingTimeout, Math.max(50, ms))
 		}
 	}
 	let largeTimeout = () => {
-		addTimer(inchingTimeout, ms)
+		addTimer(inchingTimeout, ms * 0.5)
 		currentlyInching = true
 	}
 
@@ -438,7 +439,7 @@ Q.timeout = function (promise, ms, message = undefined) {
 				currentlyInching = false
 				ms = 2000
 			} else {
-				adjustTimer(inchingTimeout, _ms)
+				adjustTimer(inchingTimeout, _ms * 0.5)
 			}
 		} else {
 			adjustTimer(largeTimeout, Math.max(0, ms - 2000))
@@ -452,7 +453,7 @@ Q.timeout = function (promise, ms, message = undefined) {
 		ms = 2000
 	} else {
 		currentlyInching = true
-		addTimer(inchingTimeout, ms)
+		addTimer(inchingTimeout, ms * 0.5)
 	}
 
 	return deferred.promise
