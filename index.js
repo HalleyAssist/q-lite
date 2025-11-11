@@ -419,10 +419,15 @@ Q.timeout = function (promise, ms, message = undefined) {
 		currentlyInching = true
 	}
 
-	promise.then(deferred.resolve, deferred.reject).then(() => {
+	promise.then(a => {
 		clearTimer(largeTimeout)
 		clearTimer(inchingTimeout)
-	})
+		deferred.resolve(a)
+	, ex=>{
+		clearTimer(largeTimeout)
+		clearTimer(inchingTimeout)
+		deferred.reject(ex)
+	}})
 
 	deferred.promise.cancel = () => {
 		if (promise.cancel) promise.cancel()
