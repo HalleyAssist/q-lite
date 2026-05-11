@@ -57,7 +57,6 @@ declare namespace Q {
     checkCancel(message?: string): void;
   }
 
-  const Promise: typeof QPromise;
   const CancellationError: typeof Q.CancellationError;
   const CancellationState: typeof Q.CancellationState;
 
