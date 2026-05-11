@@ -7,6 +7,7 @@
     "test": "mocha --expose-gc"
   },
   "main": "index.js",
+  "types": "index.d.ts",
   "author": "Mathew Heard",
   "license": "ISC",
   "devDependencies": {
@@ -20,6 +21,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "files": [
-    "index.js"
+    "index.js",
+    "index.d.ts"
   ]
 }

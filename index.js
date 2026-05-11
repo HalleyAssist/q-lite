@@ -3,46 +3,95 @@ const util = require('util')
 const { eventLoopUtilization } = require('perf_hooks').performance;
 
 class QPromise extends Promise {
+	/**
+	 * Creates a promise with Q-lite instance helpers.
+	 * @param {(resolve: (value?: any) => void, reject: (reason?: any) => void) => void} executor Promise executor callback.
+	 * @returns {void}
+	 */
 	constructor(executor) {
 		super(executor);
 	}
 
+	/**
+	 * Wraps the current promise with a timeout.
+	 * @param {number} ms Number of milliseconds before timing out.
+	 * @param {string|symbol|undefined} [message=undefined] Optional timeout message or symbol.
+	 * @returns {QPromise<any>} A timeout-aware promise.
+	 */
 	timeout(ms, message = undefined) {
 		return Q.timeout(this, ms, message)
 	}
 
+	/**
+	 * Delays resolution of the fulfilled value.
+	 * @param {number} ms Number of milliseconds to wait.
+	 * @returns {QPromise<any>} A promise resolved with the original value after the delay.
+	 */
 	delay(ms) {
 		return this.then(function (value) {
 			return Q.delay(ms).then(() => value)
 		})
 	}
 
+	/**
+	 * Registers a rejection handler.
+	 * @param {(reason: any) => any} fn Rejection handler.
+	 * @returns {QPromise<any>} A promise for the handler result.
+	 */
 	fail(fn) {
 		return this.catch(fn)
 	}
 
+	/**
+	 * Attaches terminal handlers without returning a chained promise.
+	 * @param {(value: any) => any} [onSuccess=undefined] Fulfillment handler.
+	 * @param {(reason: any) => any} [onReject=undefined] Rejection handler.
+	 * @returns {void}
+	 */
 	done(onSuccess = undefined, onReject = undefined) {
 		if (!onSuccess) return
 		this.then(onSuccess, onReject)
 	}
 
+	/**
+	 * Calls a Node-style callback when the promise settles.
+	 * @param {Function|undefined} fn Callback receiving `(error, result)`.
+	 * @returns {QPromise<any>|undefined} The original promise when no callback is supplied, otherwise `undefined`.
+	 */
 	nodeify(fn) {
 		if (typeof fn !== 'function') return this
 
 		this.done(r => fn(null, r), e => fn(e))
 	}
+	/**
+	 * Checks whether the promise is still pending.
+	 * @returns {boolean} `true` when the promise has not settled.
+	 */
 	isPending() {
 		return Q.isPending(this)
 	}
+	/**
+	 * Checks whether the promise is fulfilled.
+	 * @returns {boolean} `true` when the promise is fulfilled.
+	 */
 	isFulfilled() {
 		return Q.isFulfilled(this)
 	}
+	/**
+	 * Checks whether the promise is rejected.
+	 * @returns {boolean} `true` when the promise is rejected.
+	 */
 	isRejected() {
 		return Q.isRejected(this)
 	}
 }
 
 class CancellationError extends Error {
+	/**
+	 * Creates a cancellation error.
+	 * @param {string} [message='cancel'] Error message.
+	 * @returns {void}
+	 */
 	constructor(message = 'cancel') {
 		super()
 		this.message = message
@@ -51,15 +100,29 @@ class CancellationError extends Error {
 }
 
 class CancellationState {
+	/**
+	 * Creates a cancellation tracking container.
+	 * @returns {void}
+	 */
 	constructor() {
 		this.cancelled = false
 		this._child = new Set()
 	}
+	/**
+	 * Registers a callback to run on cancellation.
+	 * @param {Function} fn Cancellation callback.
+	 * @returns {boolean} `true` when the callback was registered.
+	 */
 	addOnCancel(fn){
 		if(this.cancelled) return false
 		this._child.add(fn)
 		return true
 	}
+	/**
+	 * Tracks a cancellable promise under this state.
+	 * @param {Promise<any> & { cancel?: Function }} promise Promise to wrap.
+	 * @returns {Promise<any>} The wrapped promise.
+	 */
 	promiseWrap(promise) {
 		if(this.cancelled) throw new CancellationError('Already cancelled')
 		const cancelFn = promise.cancel
@@ -78,6 +141,11 @@ class CancellationState {
 		}
 		return promise
 	}
+	/**
+	 * Creates helper functions for wrapping a deferred.
+	 * @param {WeakRef<{ reject: Function }>} weakDeferred Weak reference to the deferred object.
+	 * @returns {{ cancelFn: Function, doRemove: Function }} Cancellation helpers.
+	 */
 	_deferredWrapFns(weakDeferred){
 		const cancelFn = ()=>{
 			const deferred = weakDeferred.deref()
@@ -90,6 +158,11 @@ class CancellationState {
 		}
 		return {cancelFn, doRemove}
 	}
+	/**
+	 * Tracks a deferred object under this cancellation state.
+	 * @param {{ promise: Promise<any>, reject: Function }} deferred Deferred object to wrap.
+	 * @returns {{ promise: Promise<any>, reject: Function }} The wrapped deferred.
+	 */
 	deferredWrap(deferred){
 		if(this.cancelled) throw new CancellationError('Already cancelled')
 		const {cancelFn, doRemove} = this._deferredWrapFns(new WeakRef(deferred))
@@ -101,6 +174,10 @@ class CancellationState {
 		return deferred
 	}
 
+	/**
+	 * Cancels all registered children.
+	 * @returns {void}
+	 */
 	cancel() {
 		if(this.cancelled) return
 		this.cancelled = true
@@ -110,12 +187,22 @@ class CancellationState {
 		this._child = null
 	}
 
+	/**
+	 * Throws when the state has already been cancelled.
+	 * @param {string} [message='cancel'] Message used for the cancellation error.
+	 * @returns {void}
+	 */
 	checkCancel(message = 'cancel') {
 		if(this.cancelled) throw new CancellationError(message)
 	}
 }
 
 
+/**
+ * Wraps a value in a `QPromise`.
+ * @param {any} value Value to resolve.
+ * @returns {QPromise<any>} A resolved `QPromise`.
+ */
 function Q(value) {
 	return new QPromise(r => r(value))
 }
@@ -126,10 +213,19 @@ Q.CancellationError = CancellationError
 
 Q.CancellationState = CancellationState
 
+/**
+ * Throws after a promise has already been cancelled.
+ * @returns {never} This function always throws.
+ */
 function AlreadyCancelledFn(){
 	throw new Error('Already cancelled')
 }
 
+/**
+ * Wraps a function so its returned promise becomes cancellable.
+ * @param {Function} fn Function receiving `CancellationState` as its first argument.
+ * @returns {Function} A wrapped function with cancellation support.
+ */
 Q.canceller = function (fn) {
 	// fn will be called with CancellationState as the first argument, followed by it's own arguments
 	return function (...args) {
@@ -146,6 +242,10 @@ Q.canceller = function (fn) {
 	}
 }
 
+/**
+ * Creates a deferred object.
+ * @returns {{ resolve: Function, reject: Function, promise: QPromise<any> }} A deferred container.
+ */
 Q.defer = function defer() {
 	let d
 	d = {
@@ -159,6 +259,11 @@ Q.defer = function defer() {
 	return d
 }
 
+/**
+ * Returns a cancellable delay promise.
+ * @param {number} ms Number of milliseconds to delay.
+ * @returns {QPromise<void> & { cancel: Function }} A promise that resolves after the delay.
+ */
 Q.delay = function (ms) {
 	const deferred = Q.defer()
 	const timer = setTimeout(deferred.resolve, ms)
@@ -170,6 +275,11 @@ Q.delay = function (ms) {
 	return ret
 }
 
+/**
+ * Races values without exposing unresolved deferred state.
+ * @param {Iterable<any>} contenders Values or promises to race.
+ * @returns {Promise<any>} A promise for the first settled contender.
+ */
 Q.safeRace = async function(contenders) {
 	let deferreds = [], promises = []
 	for (let contender of contenders) {
@@ -193,6 +303,12 @@ Q.safeRace = async function(contenders) {
 	}
 }
 
+/**
+ * Races promises and cancels the losers.
+ * @param {Array<Promise<any> & { cancel?: Function }>} promises Promises to race.
+ * @param {boolean} [safeRace=true] Uses `Q.safeRace` when `true`.
+ * @returns {Promise<any>} A promise for the winning result.
+ */
 Q.cancelledRace = async function (promises, safeRace = true) {
 	let ret
 	try {
@@ -210,6 +326,12 @@ Q.cancelledRace = async function (promises, safeRace = true) {
 	return ret
 }
 
+/**
+ * Calls a function and resolves with its return value.
+ * @param {Function} fn Function to invoke.
+ * @param {...any} args Arguments passed to the function.
+ * @returns {QPromise<any>} A promise for the function result.
+ */
 Q.fcall = function (fn, ...args) {
 	return new QPromise(async (resolve, reject) => {
 		try {
@@ -220,6 +342,12 @@ Q.fcall = function (fn, ...args) {
 	})
 }
 
+/**
+ * Calls a Node-style callback function and resolves its result.
+ * @param {Function} fn Node-style function to invoke.
+ * @param {...any} args Arguments passed before the callback.
+ * @returns {QPromise<any>} A promise for the callback result.
+ */
 Q.nfcall = function (fn, ...args) {
 	return new QPromise((resolve, reject) => {
 		try {
@@ -236,6 +364,14 @@ Q.nfcall = function (fn, ...args) {
 	})
 }
 
+/**
+ * Applies an exact timeout using `setTimeout`.
+ * @param {Promise<any> & { cancel?: Function }} promise Promise to guard.
+ * @param {number} ms Timeout in milliseconds.
+ * @param {string|symbol|undefined} [message=undefined] Optional timeout message.
+ * @param {boolean} [overloadSafe=true] Defers rejection with `setImmediate` when `true`.
+ * @returns {QPromise<any> & { cancel: Function, extend: Function }} A timeout-aware promise.
+ */
 Q.timeoutExact = function (promise, ms, message = undefined, overloadSafe = true) {
 	const deferred = Q.defer()
 
@@ -275,6 +411,12 @@ let nextTimer = EmptyTimer
 const timers = new Set()
 let nextTickTimer = null
 
+/**
+ * Schedules a timer callback.
+ * @param {Function & { time?: number }} fn Callback to schedule.
+ * @param {number} ms Delay in milliseconds.
+ * @returns {void}
+ */
 function addTimer(fn, ms){
 	const now = Date.now()
 	const timeToRun = now + ms
@@ -294,6 +436,12 @@ function addTimer(fn, ms){
 
 }
 
+/**
+ * Adjusts the execution time for a scheduled timer.
+ * @param {Function & { time?: number }} fn Callback to reschedule.
+ * @param {number} ms Delay in milliseconds.
+ * @returns {void}
+ */
 function adjustTimer(fn, ms){
 	const now = Date.now()
 	fn.time = now + ms
@@ -313,6 +461,11 @@ function adjustTimer(fn, ms){
 	}
 }
 
+/**
+ * Removes a scheduled timer callback.
+ * @param {Function} fn Callback to clear.
+ * @returns {void}
+ */
 function clearTimer(fn){
 	if(nextTimer === fn){
 		nextTimer = EmptyTimer
@@ -333,6 +486,11 @@ function clearTimer(fn){
 	}
 }
 
+/**
+ * Executes pending timer callbacks.
+ * @param {number} scheduled The scheduled tick deadline.
+ * @returns {void}
+ */
 function executeTimerTick(scheduled){
 	const now = Date.now()
 	const workingTime = (now + scheduled) / 2
@@ -375,6 +533,10 @@ function executeTimerTick(scheduled){
 	}
 }
 
+/**
+ * Exposes timer state for debugging.
+ * @returns {{ nextTimer: Function, nextTickTimer: NodeJS.Timeout|null }} Internal timer state.
+ */
 Q._debugTimer = function(){
 	return {
 		nextTimer,
@@ -382,6 +544,13 @@ Q._debugTimer = function(){
 	}
 }
 
+/**
+ * Applies an event-loop aware timeout.
+ * @param {Promise<any> & { cancel?: Function }} promise Promise to guard.
+ * @param {number} ms Timeout in milliseconds.
+ * @param {string|symbol|undefined} [message=undefined] Optional timeout message.
+ * @returns {QPromise<any> & { cancel: Function, extend: Function }} A timeout-aware promise.
+ */
 Q.timeout = function (promise, ms, message = undefined) {
 	const deferred = Q.defer()
 
@@ -464,6 +633,14 @@ Q.timeout = function (promise, ms, message = undefined) {
 	return deferred.promise
 }
 
+/**
+ * Calls a warning handler when a promise runs for too long.
+ * @param {Promise<any>} promise Promise to observe.
+ * @param {number} ms Timeout in milliseconds.
+ * @param {(error: Error) => boolean|number|Promise<boolean|number>} fn Warning callback.
+ * @param {string|undefined} [message=undefined] Optional timeout message.
+ * @returns {Promise<any>} The original promise result.
+ */
 Q.timewarn = async function (promise, ms, fn, message = undefined) {
 	let ex = new Error(message ? message : `Timed out after ${ms} ms`)
     async function doCall() {
@@ -491,6 +668,13 @@ Q.timewarn = async function (promise, ms, fn, message = undefined) {
     return await promise.then(doClear, doClearEx)
 }
 
+/**
+ * Rejects a deferred if it does not settle in time.
+ * @param {{ reject: Function, promise: Promise<any> }} deferred Deferred to guard.
+ * @param {number} ms Timeout in milliseconds.
+ * @param {Error|symbol|undefined} [symbol=undefined] Error or symbol used for rejection.
+ * @returns {Promise<any>} The deferred promise.
+ */
 Q.deferredTimeout = function (deferred, ms, symbol = undefined) {
 	if (!symbol) {
 		symbol = new Error(`Timed out after ${ms} ms`)
@@ -509,22 +693,50 @@ Q.deferredTimeout = function (deferred, ms, symbol = undefined) {
 	return deferred.promise
 }
 
+/**
+ * Invokes an object's Node-style method.
+ * @param {Record<string, Function>} object Target object.
+ * @param {string} method Method name.
+ * @param {...any} args Arguments to pass to the method.
+ * @returns {Promise<any>} A promise for the callback result.
+ */
 Q.ninvoke = async function (object, method, ...args) {
 	return Q.nfcall(await object[method].bind(object), ...args)
 }
 
+/**
+ * Invokes an object's method and resolves its return value.
+ * @param {Record<string, Function>} object Target object.
+ * @param {string} method Method name.
+ * @param {...any} args Arguments to pass to the method.
+ * @returns {Promise<any>} A promise for the method result.
+ */
 Q.finvoke = async function (object, method, ...args) {
 	return Q.fcall(await object[method].bind(object), ...args)
 }
 
+/**
+ * Resolves on the next process tick.
+ * @returns {Promise<void>} A promise resolved on the next tick.
+ */
 Q.nextTick = function(){
 	return new Promise(resolve=>{
 		process.nextTick(resolve)
 	})
 }
 
+/**
+ * Placeholder for Q compatibility.
+ * @returns {void}
+ */
 Q.resetUnhandledRejections = function () { }
 
+/**
+ * Waits for all values unless cancelled.
+ * @param {Array<Promise<any> & { cancel?: Function }>} values Values to await.
+ * @param {(fn: Function) => void} cancelFn Registers a cancel callback.
+ * @returns {Promise<any[]>} A promise for all results.
+ */
 async function safeAll(values, cancelFn)  {
 	const deferred = Q.defer()
 	cancelFn(()=>{
@@ -544,6 +756,11 @@ async function safeAll(values, cancelFn)  {
 	return await allPromise
 }
 
+/**
+ * Waits for all values and cancels the rest on failure.
+ * @param {Array<Promise<any> & { cancel?: Function }>} values Values to await.
+ * @returns {Promise<any[]> & { cancel?: Function }} A cancellable promise for all results.
+ */
 Q.safeAll = function(values){
 	let cancel
 	const ret = safeAll(values, c=>cancel=c)
@@ -551,6 +768,12 @@ Q.safeAll = function(values){
 	return ret
 }
 
+/**
+ * Waits for all values, optionally enabling cancellation.
+ * @param {Array<any>} values Values or promises to await.
+ * @param {boolean} [cancel=true] Enables cancellation-aware behavior when `true`.
+ * @returns {Promise<any[]>} A promise for all results.
+ */
 Q.all = function (values, cancel = true) {
 	if(cancel){
 		return Q.safeAll(values)	
@@ -558,7 +781,17 @@ Q.all = function (values, cancel = true) {
 	return QPromise.all(values, cancel)
 }
 
+/**
+ * Creates a rejected `QPromise`.
+ * @param {any} reason Rejection reason.
+ * @returns {QPromise<never>} A rejected promise.
+ */
 Q.reject = (reason) => QPromise.reject(reason)
+/**
+ * Creates a resolved `QPromise`.
+ * @param {any} value Resolution value.
+ * @returns {QPromise<any>} A resolved promise.
+ */
 Q.resolve = value => QPromise.resolve(value)
 
 const Util = process.binding('util')
@@ -586,20 +819,42 @@ if (Util.getPromiseDetails) {
 	}
 }
 
+/**
+ * Checks whether a promise is pending.
+ * @param {Promise<any>} promise Promise to inspect.
+ * @returns {boolean} `true` when the promise is pending.
+ */
 Q.isPending = function (promise) {
 	return _promiseState(promise) == 0
 }
 
+/**
+ * Checks whether a promise is fulfilled.
+ * @param {Promise<any>} promise Promise to inspect.
+ * @returns {boolean} `true` when the promise is fulfilled.
+ */
 Q.isFulfilled = function (promise) {
 	return _promiseState(promise) == 1
 }
 
+/**
+ * Checks whether a promise is rejected.
+ * @param {Promise<any>} promise Promise to inspect.
+ * @returns {boolean} `true` when the promise is rejected.
+ */
 Q.isRejected = function (promise) {
 	return _promiseState(promise) == 2
 }
 
 Q.CancellationError = CancellationError
 
+/**
+ * Prevents overlapping executions by sharing the active promise.
+ * @param {Function} fn Function to run singularly.
+ * @param {(fn: Function) => void} cancelFn Registers a cancel callback.
+ * @param {Array<any>} args Arguments for the wrapped function.
+ * @returns {Promise<any>} A promise for the function result.
+ */
 async function singularize(fn, cancelFn, args){
 	const deferred = Q.defer()
 	cancelFn(()=>{
@@ -612,6 +867,11 @@ async function singularize(fn, cancelFn, args){
 	return await p
 }
 
+/**
+ * Wraps a function so concurrent calls share the same in-flight promise.
+ * @param {Function} fn Function to wrap.
+ * @returns {Function} A singularized function.
+ */
 Q.singularize = function(fn){
 	let currentPromise = null
 	return function(...args){
@@ -632,6 +892,13 @@ Q.singularize = function(fn){
 }
 
 
+/**
+ * Waits for either primary or secondary values, with cancellation support.
+ * @param {(fn: Function) => void} cancelFn Registers a cancel callback.
+ * @param {Array<Promise<any>>} primaryValues Primary promises to race.
+ * @param {Array<Promise<any> & { resolve?: Function }>} secondaryValues Secondary promises to race and later resolve.
+ * @returns {Promise<void>} A promise that settles when one input resolves or rejects.
+ */
 async function safeyAwait(cancelFn, primaryValues, secondaryValues){
 	let dd
 	for(let i = 0; i < secondaryValues.length; i++){
@@ -659,6 +926,12 @@ async function safeyAwait(cancelFn, primaryValues, secondaryValues){
 	}
 }
 
+/**
+ * Races primary and secondary promises with cancellation support.
+ * @param {Array<Promise<any>>} primaryValues Primary promises to race.
+ * @param {Array<Promise<any>>} secondaryValues Secondary promises to race.
+ * @returns {Promise<void> & { cancel?: Function }} A cancellable promise for the race.
+ */
 Q.safeyAwait = function(primaryValues, secondaryValues) {
 	let cancel
 	const ret = safeyAwait(c=>cancel=c, primaryValues, secondaryValues)
