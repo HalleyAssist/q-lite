@@ -588,11 +588,11 @@ Q.timeout = function (promise, ms, message = undefined) {
 		currentlyInching = true
 	}
 
-	promise.then(a => {
+	promise.then((a) => {
 		clearTimer(largeTimeout)
 		clearTimer(inchingTimeout)
 		deferred.resolve(a)
-	, ex=>{
+	, (ex)=>{
 		clearTimer(largeTimeout)
 		clearTimer(inchingTimeout)
 		deferred.reject(ex)
