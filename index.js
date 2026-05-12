@@ -592,11 +592,11 @@ Q.timeout = function (promise, ms, message = undefined) {
 		clearTimer(largeTimeout)
 		clearTimer(inchingTimeout)
 		deferred.resolve(a)
-	, (ex)=>{
+	}, (ex)=>{
 		clearTimer(largeTimeout)
 		clearTimer(inchingTimeout)
 		deferred.reject(ex)
-	}})
+	})
 
 	deferred.promise.cancel = () => {
 		if (promise.cancel) promise.cancel()
