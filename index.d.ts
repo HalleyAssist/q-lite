@@ -60,18 +60,12 @@ declare namespace Q {
   const CancellationError: typeof Q.CancellationError;
   const CancellationState: typeof Q.CancellationState;
 
-  function canceller<
-    F extends (this: any, state: CancellationState, ...args: any[]) => any
-  >(
-    fn: F,
-  ): F extends (this: infer TThis, state: CancellationState, ...args: infer Args) => infer R
-    ? (
-        this: TThis,
-        ...args: Args
-      ) => R extends PromiseLike<infer T>
-        ? Promise<T> & Cancelable
-        : R
-    : never;
+  type CancellableReturn<TResult> =
+  TResult extends PromiseLike<infer T>
+    ? Promise<T> & Cancelable
+    : TResult;
+
+function canceller<TThis, Args extends unknown[], TResult>( fn: (this: TThis, state: CancellationState, ...args: Args) => TResult, ): (...args: Args) => TResult extends PromiseLike<infer T> ? (Promise<T> & Cancelable) : TResult;
 
   function defer<T = unknown>(): Deferred<T>;
   function delay(ms: number): DeferredPromise<void>;
